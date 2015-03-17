@@ -8,8 +8,6 @@ import           Data.Char
 
 import           Common
 
-import           Debug.Trace
-
 --------------------------------------------------------------------------------
 parseMail :: Mail -> [String] -> Mail
 parseMail m ls =  parseMail' m ls ""

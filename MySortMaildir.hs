@@ -22,8 +22,6 @@ import           Common
 import           Config
 import           MyParseMail
 
-import           Debug.Trace
-
 --------------------------------------------------------------------------------
 --  runMySortMaildir
 
