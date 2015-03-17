@@ -1,0 +1,4 @@
+import           MySortMaildir
+
+
+main = runMySortMaildir
