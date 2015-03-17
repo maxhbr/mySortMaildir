@@ -4,6 +4,7 @@ module MyParseMail
   ) where
 
 import           Data.List
+import           Data.List.Split
 import           Data.Char
 
 import           Common
@@ -31,5 +32,5 @@ parseMail'' m r | "From:"    `isPrefixOf` r = m { from    = remKW  r }
                 | "Cc:"      `isPrefixOf` r = m { cc      = remKWl r }
                 | otherwise                 = m
   where
-    remKW  = unwords . tail . words . map toLower
-    remKWl = tail . words . map toLower
+    remKW  = unwords . tail . splitOn ":" . map toLower
+    remKWl = words . remKW
