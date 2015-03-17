@@ -29,15 +29,16 @@ import           Debug.Trace
 
 runMySortMaildir :: IO ()
 runMySortMaildir = do
-    line >> putStrLn "Start " >> line
+    line >> putStrLn "Start"
     mapM_ (\cfg -> do
-      putStrLn $ "work on: " ++ inbox cfg
+      line >> putStrLn ("work on: " ++ inbox cfg ++ " ...")
       curMails <- getMails (inbox cfg) "cur"
-      putStrLn $ show (length curMails) ++ " current mails found"
+      putStrLn $ "   " ++ show (length curMails) ++ " current mails found"
       newMails <- getMails (inbox cfg) "new"
-      putStrLn $ show (length newMails) ++ " new mails found"
-      line >> mapM_ (applyRules $ rules cfg) (curMails ++ newMails) >> line
+      putStrLn $ "   " ++ show (length newMails) ++ " new mails found"
+      mapM_ (applyRules $ rules cfg) (curMails ++ newMails)
       ) cfgs
+    line >> putStrLn "Done"
   where
     line = putStrLn $ replicate 60 '='
 
@@ -50,7 +51,7 @@ runMySortMaildir = do
           filePath = inb </> cur </> p
         in do
           rawContent <- readFile filePath
-          return $ parseMail (emptyM {file = filePath}) (lines rawContent) ""
+          return $ parseMail (emptyM {file = filePath}) (lines rawContent)
       in do
         ex <- doesDirectoryExist (inb </> cur)
         if ex
