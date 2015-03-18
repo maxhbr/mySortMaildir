@@ -3,8 +3,12 @@ mySortMaildir
 A small program, which sorts (moves) mails in maildirs by some simply
 configurable rules.
 
-To configure, create a **Config.hs** by using **Config.hs.example**. Then build the
-project
+I am actually **not sure, if it is safe to use this program**.
+
+Setup
+-----
+To configure, create a **Config.hs** by using **Config.hs.example**.
+Then build the project
 
     $ cabal sandbox init
     $ cabal build
@@ -17,6 +21,7 @@ TODO:
 -----
 * Solve encoding problems
 * Mail header as **[(String, String)]̀̀̀̀**?
+* use parsec for parsing
 * Find better name
 
 Infos:
