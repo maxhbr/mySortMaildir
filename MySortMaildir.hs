@@ -78,7 +78,7 @@ runMySortMaildir = do
               when exS (removeFile s)
       in if rule r m
         then do
-          putStr $ "apply rule " ++ name r ++ " ..."
+          putStr $ "apply rule " ++ name r ++ " ... "
           -- create mailbox if needed
           exD <- doesDirectoryExist (target r)
           unless exD
