@@ -7,10 +7,13 @@ I am actually **not sure, if it is safe to use this program**.
 
 Setup
 -----
-To configure, create a **Config.hs** by using **Config.hs.example**.
-Then build the project
+To configure, create a **Config.hs** by using **Config.hs.example** and
 
     $ cabal sandbox init
+    $ cabal install
+
+Then build the project
+
     $ cabal build
 
 or run it directly via
