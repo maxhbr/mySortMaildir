@@ -1,7 +1,9 @@
 mySortMaildir
 =============
-A small program, which sorts (moves) mails in maildirs by some simply
-configurable rules.
+A small program, which filters mails in **maildir**s by some simple configurable
+rules.
+In my configuration are the maildirs updated by **offlineimap** and read via
+**mutt** but also other programs use maildirs.
 
 I am actually **not sure, if it is safe to use this program**.
 
