@@ -22,6 +22,10 @@ or run it directly via
 
     $ cabal run
 
+or run it without compiling via
+
+    $ ./src/Main.hs
+
 TODO:
 -----
 * Solve encoding problems
