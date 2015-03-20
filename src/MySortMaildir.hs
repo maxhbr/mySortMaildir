@@ -24,11 +24,7 @@ import           System.Posix.Files
 import           Control.Monad
 import           Data.Char
 import           Data.List
-#if 0
-import           Data.List.Split
-#else
 import qualified Data.Map as M
-#endif
 
 --------------------------------------------------------------------------------
 --  Main function to call
@@ -65,7 +61,7 @@ emptyMail = M { file = ""
               , allHeaders = M.empty }
 myLookup k m = case M.lookup k (allHeaders m) of
   Nothing -> ""
-  Just v -> v
+  Just v -> map toLower v
 subject = myLookup "Subject"
 from = myLookup "From"
 to = words . myLookup "To"
