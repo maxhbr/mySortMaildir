@@ -10,7 +10,7 @@
 module MySortMaildir
   ( runMySortMaildir
   , Config (..)
-  , Mail (..)
+  , Mail (..), subject, from, to, cc
   , Action (..)
   , Rule (..)
   -- useful functions for creating rules:
@@ -24,7 +24,11 @@ import           System.Posix.Files
 import           Control.Monad
 import           Data.Char
 import           Data.List
+#if 0
 import           Data.List.Split
+#else
+import qualified Data.Map as M
+#endif
 
 --------------------------------------------------------------------------------
 --  Main function to call
@@ -49,28 +53,30 @@ runMySortMaildir cfgs = do
 data Config = C { inbox :: FilePath
                 , rules :: [Rule]
                 }
+
 data Mail = M { file :: FilePath
               , rawContent :: String
               , content :: String
-              , subject :: String
-              , from :: String
-              , to :: [String]
-              , cc :: [String]
-              --, allHeaders :: [String,String]
+              , allHeaders :: (M.Map String String)
               } deriving (Eq,Show)
+emptyMail = M { file = ""
+              , rawContent = ""
+              , content = ""
+              , allHeaders = M.empty }
+myLookup k m = case M.lookup k (allHeaders m) of
+  Nothing -> ""
+  Just v -> v
+subject = myLookup "Subject"
+from = myLookup "From"
+to = words . myLookup "To"
+cc = words . myLookup "Cc"
+
 data Action = MoveTo FilePath | GenAction (Mail -> IO())
+
 data Rule = R { name :: String
               , rule :: Mail -> Bool
               , action :: Action
               }
-
-emptyM = M { file = ""
-           , rawContent = ""
-           , content = ""
-           , subject = ""
-           , from = ""
-           , to = []
-           , cc = [] }
 
 --------------------------------------------------------------------------------
 --  Useful functions for creating rules
@@ -98,8 +104,8 @@ getMails' inb cur = let
         filePath = inb </> cur </> p
       in do
         rawCtn <- readFile filePath
-        return $ parseMail (emptyM { file = filePath
-                                   , rawContent = rawCtn })
+        return $ parseMail (emptyMail { file = filePath
+                                      , rawContent = rawCtn })
                            (lines rawCtn)
   in do
     ex <- doesDirectoryExist (inb </> cur)
@@ -126,6 +132,7 @@ parseMail' m ([]:ls) r = parseMail'' m r
 parseMail' m (l:ls)  r | " " `isPrefixOf` l = parseMail' m ls (r++l)
                        | otherwise          = parseMail' (parseMail'' m r) ls l
 
+#if 0
 parseMail'' :: Mail -> String -> Mail
 parseMail'' m r | "From:"    `isPrefixOf` r = m { from    = remKW  r }
                 | "Subject:" `isPrefixOf` r = m { subject = remKW  r }
@@ -135,6 +142,19 @@ parseMail'' m r | "From:"    `isPrefixOf` r = m { from    = remKW  r }
   where
     remKW  = unwords . tail . splitOn ":" . map toLower
     remKWl = words . remKW
+#else
+parseMail'' :: Mail -> String -> Mail
+parseMail'' m r = let
+    mySplit :: String -> (String,String)
+    mySplit s = mySplit' "" s
+    mySplit' :: String -> String -> (String,String)
+    mySplit' r []       = (r,"")
+    mySplit' r (':':ss) = (r,ss)
+    mySplit' r (s:ss)   = mySplit' (r++[s]) ss
+
+    kv = mySplit r
+  in m { allHeaders = (M.insert (fst kv) (snd kv) (allHeaders m)) }
+#endif
 
 --------------------------------------------------------------------------------
 --  Functions to apply the rules
