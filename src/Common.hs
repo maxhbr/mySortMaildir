@@ -13,6 +13,7 @@ data Mail = M { file :: FilePath
               , to :: [String]
               , cc :: [String]
               } deriving (Eq,Show)
+data Action = MoveTo FilePath | GenAction (Mail -> IO())
 data Rule = R { name :: String
               , rule :: Mail -> Bool
               , target :: String
