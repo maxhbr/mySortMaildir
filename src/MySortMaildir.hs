@@ -15,12 +15,11 @@ import           System.FilePath
 import           System.FilePath.Posix
 import           System.Posix.Files
 import           Control.Monad
-import           Data.List
 import           Data.Char
 
 import           Common
 import           Config
-import           MyParseMail
+import           MyGetMails
 
 --------------------------------------------------------------------------------
 --  runMySortMaildir
@@ -30,9 +29,8 @@ runMySortMaildir = do
     line >> putStrLn "Start"
     mapM_ (\cfg -> do
       line >> putStrLn ("work on: " ++ inbox cfg ++ " ...")
-      curMails <- getMails (inbox cfg) "cur"
+      (curMails,newMails) <- getMails (inbox cfg)
       putStrLn $ "   " ++ show (length curMails) ++ " current mails found"
-      newMails <- getMails (inbox cfg) "new"
       putStrLn $ "   " ++ show (length newMails) ++ " new mails found"
       mapM_ (applyRules $ rules cfg) (curMails ++ newMails)
       ) cfgs
@@ -40,55 +38,36 @@ runMySortMaildir = do
   where
     line = putStrLn $ replicate 60 '='
 
-    getMails :: FilePath -> FilePath -> IO [Mail]
-    getMails inb cur = let
-      filterDots  = filter (\p -> not $ "." `isPrefixOf` p)
-      filterFiles = filterM (\p -> doesFileExist (inb </> cur </> p))
-      getMail :: FilePath -> IO Mail
-      getMail p = let
-          filePath = inb </> cur </> p
-        in do
-          rawContent <- readFile filePath
-          return $ parseMail (emptyM {file = filePath}) (lines rawContent)
-      in do
-        ex <- doesDirectoryExist (inb </> cur)
-        if ex
-          then do
-            allfilespre <- getDirectoryContents (inb </> cur)
-            files <- filterFiles (filterDots allfilespre)
-            mapM getMail files
-          else error "INBOX not found"
+applyRules :: [Rule] -> Mail -> IO()
+applyRules [] m = return ()
+  -- putStrLn $ "no rule found (From: " ++ from m ++ ")"
+applyRules (r:rs) m = if rule r m
+  then do
+    putStr $ "apply rule " ++ name r ++ " ... "
+    applyAction m (action r)
+  else applyRules rs m
 
-    applyRules :: [Rule] -> Mail -> IO()
-    applyRules [] m = return ()
-      -- putStrLn $ "no rule found (From: " ++ from m ++ ")"
-    applyRules (r:rs) m =let 
-        sPath          = splitPath (file m)
-        dSPath         = drop (length sPath - 2) sPath
-        mySafeCopy s d = do 
-          -- TODO: Improve!
-          exD <- doesFileExist d
-          if exD
-            then putStrLn "Destination file already exists"
-            else do
-              copyFile s d
-              exS <- doesFileExist d
-              when exS (removeFile s)
-        applyRules' m (MoveTo p) = let 
-          targetDir      = p </> head dSPath
-          targetFile     = targetDir </> head (tail dSPath)
-          in do
-          -- create mailbox if needed
-          exD <- doesDirectoryExist p
-          unless exD
-                 (mapM_ (\c -> createDirectoryIfMissing True (p </> c))
-                        ["new","cur","tmp"])
-          -- copy the file
-          mySafeCopy (file m) targetFile
-          putStrLn "done"
-        applyRules' m (GenAction a) = a m
-      in if rule r m
-        then do
-          putStr $ "apply rule " ++ name r ++ " ... "
-          applyRules' m (action r)
-        else applyRules rs                                                       m
+applyAction m (MoveTo p) = let 
+    sPath          = splitPath (file m)
+    dSPath         = drop (length sPath - 2) sPath
+    targetDir      = p </> head dSPath
+    targetFile     = targetDir </> head (tail dSPath)
+    mySafeCopy s d = do 
+      -- TODO: Improve!
+      exD <- doesFileExist d
+      if exD
+        then putStrLn "Destination file already exists"
+        else do
+          copyFile s d
+          exS <- doesFileExist d
+          when exS (removeFile s)
+  in do
+    -- create mailbox if needed
+    exD <- doesDirectoryExist p
+    unless exD
+           (mapM_ (\c -> createDirectoryIfMissing True (p </> c))
+                  ["new","cur","tmp"])
+    -- copy the file
+    mySafeCopy (file m) targetFile
+    putStrLn "done"
+applyAction m (GenAction a) = a m

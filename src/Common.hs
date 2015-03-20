@@ -1,7 +1,13 @@
 module Common
-  where
+  ( Config (..)
+  , Mail (..), emptyM
+  , Action (..)
+  , Rule (..)
+  , isAnyInfix
+  , module X
+  ) where
 
-import           Data.List
+import           Data.List as X
 
 data Config = C { inbox :: FilePath
                 , rules :: [Rule]
