@@ -1,6 +1,4 @@
-module Config
-  ( cfgs
-  ) where
+#!/usr/bin/env runhaskell
 
 import           Data.List
 import           Data.Char
@@ -8,7 +6,12 @@ import           System.Directory
 import           System.FilePath
 import           System.FilePath.Posix
 
-import           Common
+import           MySortMaildir
+
+main = runMySortMaildir cfgs
+
+--------------------------------------------------------------------------------
+--  Mailbox dirs
 
 mailbox0 = "/home/USER/Mail/tosort/"
 mailbox1 = "/home/USER/Mail/mail/"
@@ -16,7 +19,7 @@ mailbox1 = "/home/USER/Mail/mail/"
 --------------------------------------------------------------------------------
 --  Configs
 
-cfgs = 
+cfgs =
   [ C { inbox = mailbox0 </> "INBOX"
       , rules = haskellR ++ openlabR }
   , C { inbox = mailbox1 </> "INBOX"
@@ -27,11 +30,11 @@ cfgs =
 --------------------------------------------------------------------------------
 --  Rule-sets
 
-haskellR = 
+haskellR =
   [ R { name   = "haskell"
       , rule   = \m -> "haskell" `isInfixOf` map toLower (subject m)
       , action = MoveTo $ mailbox1 </> "Sort.Haskell" } ]
-openlabR = 
+openlabR =
   [ R { name   = "OpenLab All"
       , rule   = isAnyInfix "alle@lists.openlab-augsburg.de"
       , action = MoveTo $ mailbox1 </> "OpenLab.All" }
@@ -41,12 +44,12 @@ openlabR =
   , R { name   = "OpenLab Other"
       , rule   = isAnyInfix "openlab-augsburg.de"
       , action = MoveTo $ mailbox1 </> "OpenLab.Other" } ]
-billingR = 
+billingR =
   [ R { name   = "amazon"
       , rule   = \m -> "amazon" `isInfixOf` map toLower (from m)
-                    || isAnyInfix "amazon"
+                    || isAnyInfix "amazon" m
       , action = MoveTo $ mailbox1 </> "Archive.Billing" } ]
-defaultR = 
+defaultR =
   [ R { name   = "Default"
       , rule   = const True
       , action = MoveTo $ mailbox1 </> "Sort.Unknown" } ]

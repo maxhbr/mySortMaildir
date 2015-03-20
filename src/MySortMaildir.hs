@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 --------------------------------------------------------------------------------
 -- |
 -- Module      : MySortMaildir
@@ -8,6 +9,12 @@
 --------------------------------------------------------------------------------
 module MySortMaildir
   ( runMySortMaildir
+  , Config (..)
+  , Mail (..)
+  , Action (..)
+  , Rule (..)
+  -- useful functions for creating rules:
+  , isAnyInfix
   ) where
 
 import           System.Directory
@@ -16,16 +23,14 @@ import           System.FilePath.Posix
 import           System.Posix.Files
 import           Control.Monad
 import           Data.Char
-
-import           Common
-import           Config
-import           MyGetMails
+import           Data.List
+import           Data.List.Split
 
 --------------------------------------------------------------------------------
---  runMySortMaildir
+--  Main function to call
 
-runMySortMaildir :: IO ()
-runMySortMaildir = do
+runMySortMaildir :: [Config] -> IO ()
+runMySortMaildir cfgs = do
     line >> putStrLn "Start"
     mapM_ (\cfg -> do
       line >> putStrLn ("work on: " ++ inbox cfg ++ " ...")
@@ -37,6 +42,97 @@ runMySortMaildir = do
     line >> putStrLn "Done"
   where
     line = putStrLn $ replicate 60 '='
+
+--------------------------------------------------------------------------------
+--  Data definitions
+
+data Config = C { inbox :: FilePath
+                , rules :: [Rule]
+                }
+data Mail = M { file :: FilePath
+              , content :: String
+              , subject :: String
+              , from :: String
+              , to :: [String]
+              , cc :: [String]
+              } deriving (Eq,Show)
+data Action = MoveTo FilePath | GenAction (Mail -> IO())
+data Rule = R { name :: String
+              , rule :: Mail -> Bool
+              , action :: Action
+              }
+
+emptyM = M { file = ""
+           , content = ""
+           , subject = ""
+           , from = ""
+           , to = []
+           , cc = [] }
+
+--------------------------------------------------------------------------------
+--  Useful functions for creating rules
+
+isAnyInfix :: String -> Mail -> Bool
+isAnyInfix needle m = any (needle `isInfixOf`) (to m)
+                    || any (needle `isInfixOf`) (cc m)
+                    || needle `isInfixOf` from m
+
+--------------------------------------------------------------------------------
+--  Functions to get all mails
+
+getMails :: FilePath -> IO ([Mail],[Mail])
+getMails inb = do
+  cur <- getMails' inb "cur"
+  new <- getMails' inb "new"
+  return (cur,new)
+
+getMails' :: FilePath -> FilePath -> IO [Mail]
+getMails' inb cur = let
+    filterDots  = filter (\p -> not $ "." `isPrefixOf` p)
+    filterFiles = filterM (\p -> doesFileExist (inb </> cur </> p))
+    getMail :: FilePath -> IO Mail
+    getMail p = let
+        filePath = inb </> cur </> p
+      in do
+        rawContent <- readFile filePath
+        return $ parseMail (emptyM {file = filePath}) (lines rawContent)
+  in do
+    ex <- doesDirectoryExist (inb </> cur)
+    if ex
+      then do
+        allfilespre <- getDirectoryContents (inb </> cur)
+        files <- filterFiles (filterDots allfilespre)
+        mapM getMail files
+      else error "INBOX not found"
+
+--------------------------------------------------------------------------------
+--  Functions to parse the a mail
+
+parseMail :: Mail -> [String] -> Mail
+parseMail m ls =  parseMail' m ls ""
+
+parseMail' :: Mail -> [String] -> String -> Mail
+parseMail' m []      r = parseMail'' m r
+#if 0
+parseMail' m ([]:ls) r = parseMail'' (m { content = unlines ls }) r
+#else
+parseMail' m ([]:ls) r = parseMail'' m r
+#endif
+parseMail' m (l:ls)  r | " " `isPrefixOf` l = parseMail' m ls (r++l)
+                       | otherwise          = parseMail' (parseMail'' m r) ls l
+
+parseMail'' :: Mail -> String -> Mail
+parseMail'' m r | "From:"    `isPrefixOf` r = m { from    = remKW  r }
+                | "Subject:" `isPrefixOf` r = m { subject = remKW  r }
+                | "To:"      `isPrefixOf` r = m { to      = remKWl r }
+                | "Cc:"      `isPrefixOf` r = m { cc      = remKWl r }
+                | otherwise                 = m
+  where
+    remKW  = unwords . tail . splitOn ":" . map toLower
+    remKWl = words . remKW
+
+--------------------------------------------------------------------------------
+--  Functions to apply the rules
 
 applyRules :: [Rule] -> Mail -> IO()
 applyRules [] m = return ()
