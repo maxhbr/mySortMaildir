@@ -65,8 +65,6 @@ runMySortMaildir = do
     applyRules (r:rs) m =let 
         sPath          = splitPath (file m)
         dSPath         = drop (length sPath - 2) sPath
-        targetDir      = target r </> head dSPath
-        targetFile     = targetDir </> head (tail dSPath)
         mySafeCopy s d = do 
           -- TODO: Improve!
           exD <- doesFileExist d
@@ -76,15 +74,21 @@ runMySortMaildir = do
               copyFile s d
               exS <- doesFileExist d
               when exS (removeFile s)
-      in if rule r m
-        then do
-          putStr $ "apply rule " ++ name r ++ " ... "
+        applyRules' m (MoveTo p) = let 
+          targetDir      = p </> head dSPath
+          targetFile     = targetDir </> head (tail dSPath)
+          in do
           -- create mailbox if needed
-          exD <- doesDirectoryExist (target r)
+          exD <- doesDirectoryExist p
           unless exD
-                 (mapM_ (\c -> createDirectoryIfMissing True (target r </> c))
+                 (mapM_ (\c -> createDirectoryIfMissing True (p </> c))
                         ["new","cur","tmp"])
           -- copy the file
           mySafeCopy (file m) targetFile
           putStrLn "done"
+        applyRules' m (GenAction a) = a m
+      in if rule r m
+        then do
+          putStr $ "apply rule " ++ name r ++ " ... "
+          applyRules' m (action r)
         else applyRules rs                                                       m

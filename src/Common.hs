@@ -16,7 +16,7 @@ data Mail = M { file :: FilePath
 data Action = MoveTo FilePath | GenAction (Mail -> IO())
 data Rule = R { name :: String
               , rule :: Mail -> Bool
-              , target :: String
+              , action :: Action
               }
 
 emptyM = M { file = ""
