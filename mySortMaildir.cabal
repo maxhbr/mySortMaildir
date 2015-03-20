@@ -3,7 +3,7 @@
 
 name:                mySortMaildir
 version:             0.1.0.0
-synopsis:            A small programm to sort a maildir
+synopsis:            A small programm to sort maildirs
 -- description:         
 license:             BSD3
 license-file:        LICENSE

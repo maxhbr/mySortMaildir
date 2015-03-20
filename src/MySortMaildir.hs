@@ -2,7 +2,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      : MySortMaildir
--- Note        :
+-- Note        : A small programm to sort maildirs
 --
 --
 --
