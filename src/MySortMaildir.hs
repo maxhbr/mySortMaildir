@@ -50,11 +50,13 @@ data Config = C { inbox :: FilePath
                 , rules :: [Rule]
                 }
 data Mail = M { file :: FilePath
+              , rawContent :: String
               , content :: String
               , subject :: String
               , from :: String
               , to :: [String]
               , cc :: [String]
+              --, allHeaders :: [String,String]
               } deriving (Eq,Show)
 data Action = MoveTo FilePath | GenAction (Mail -> IO())
 data Rule = R { name :: String
@@ -63,6 +65,7 @@ data Rule = R { name :: String
               }
 
 emptyM = M { file = ""
+           , rawContent = ""
            , content = ""
            , subject = ""
            , from = ""
@@ -78,7 +81,7 @@ isAnyInfix needle m = any (needle `isInfixOf`) (to m)
                     || needle `isInfixOf` from m
 
 --------------------------------------------------------------------------------
---  Functions to get all mails
+--  Functions to get all mails (in a parsed form)
 
 getMails :: FilePath -> IO ([Mail],[Mail])
 getMails inb = do
@@ -94,8 +97,10 @@ getMails' inb cur = let
     getMail p = let
         filePath = inb </> cur </> p
       in do
-        rawContent <- readFile filePath
-        return $ parseMail (emptyM {file = filePath}) (lines rawContent)
+        rawCtn <- readFile filePath
+        return $ parseMail (emptyM { file = filePath
+                                   , rawContent = rawCtn })
+                           (lines rawCtn)
   in do
     ex <- doesDirectoryExist (inb </> cur)
     if ex

@@ -29,6 +29,7 @@ or run it without compiling via
 
 TODO:
 -----
+* **Remember already parsed/sorted mails**
 * Solve encoding problems
 * Mail header as **[(String, String)]̀̀̀̀**?
 * use parsec for parsing
