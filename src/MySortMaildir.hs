@@ -46,10 +46,6 @@ runMySortMaildir cfgs = do
 --------------------------------------------------------------------------------
 --  Data definitions
 
-data Config = C { inbox :: FilePath
-                , rules :: [Rule]
-                }
-
 data Mail = M { file :: FilePath
               , rawContent :: String
               , content :: String
@@ -73,6 +69,14 @@ data Rule = R { name :: String
               , rule :: Mail -> Bool
               , action :: Action
               }
+instance Eq Rule where 
+  r1 == r2 = (name r1) == (name r2)
+instance Show Rule where 
+  show = show . name
+
+data Config = C { inbox :: FilePath
+                , rules :: [Rule]
+                } deriving (Eq,Show)
 
 --------------------------------------------------------------------------------
 --  Useful functions for creating rules
@@ -160,7 +164,7 @@ applyRules [] m = return ()
   -- putStrLn $ "no rule found (From: " ++ from m ++ ")"
 applyRules (r:rs) m = if rule r m
   then do
-    putStr $ "apply rule " ++ name r ++ " ... "
+    putStr $ "apply rule " ++ show r ++ " ... "
     applyAction m (action r)
   else applyRules rs m
 
