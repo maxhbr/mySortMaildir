@@ -9,7 +9,8 @@ I am actually **not sure, if it is safe to use this program**.
 
 Setup
 -----
-To configure, create a **Config.hs** by using **Config.hs.example** and
+To configure, create a **mySortMaildir.hs** by using
+**mySortMaildir.hs.example** and
 
     $ cabal sandbox init
     $ cabal install
@@ -24,7 +25,7 @@ or run it directly via
 
 or run it without compiling via
 
-    $ ./src/Main.hs
+    $ ./src/mySortMaildir.hs
 
 TODO:
 -----
