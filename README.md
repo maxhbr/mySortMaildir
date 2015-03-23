@@ -25,8 +25,9 @@ or run it directly via
 
 or run it without compiling via
 
-    $ chmod +x ./src/mySortMaildir.hs
-    $ ./src/mySortMaildir.hs
+    $ cd src
+    $ chmod +x mySortMaildir.hs
+    $ ./mySortMaildir.hs
 
 TODO:
 -----

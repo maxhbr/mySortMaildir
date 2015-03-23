@@ -14,13 +14,11 @@ module MySortMaildir
   , Action (..)
   , Rule (..)
   -- useful functions for creating rules:
-  , isAnyInfix
+  , isAnyInfix, isAllAnywhere, isOneAnywhere
   ) where
 
 import           System.Directory
 import           System.FilePath
-import           System.FilePath.Posix
-import           System.Posix.Files
 import           Control.Monad
 import           Data.Char
 import           Data.List
@@ -49,7 +47,7 @@ runMySortMaildir cfgs = do
 data Mail = M { file :: FilePath
               , rawContent :: String
               , content :: String
-              , allHeaders :: (M.Map String String)
+              , allHeaders :: M.Map String String
               } deriving (Eq,Show)
 emptyMail = M { file = ""
               , rawContent = ""
@@ -63,14 +61,16 @@ from = myLookup "From"
 to = words . myLookup "To"
 cc = words . myLookup "Cc"
 
-data Action = MoveTo FilePath | GenAction (Mail -> IO())
+data Action = MoveTo FilePath           -- move file to new path
+            | RemAction                 -- remove file
+            | GenAction (Mail -> IO())  -- generic action
 
 data Rule = R { name :: String
               , rule :: Mail -> Bool
               , action :: Action
               }
 instance Eq Rule where 
-  r1 == r2 = (name r1) == (name r2)
+  r1 == r2 = name r1 == name r2
 instance Show Rule where 
   show = show . name
 
@@ -85,6 +85,11 @@ isAnyInfix :: String -> Mail -> Bool
 isAnyInfix needle m = any (needle `isInfixOf`) (to m)
                     || any (needle `isInfixOf`) (cc m)
                     || needle `isInfixOf` from m
+
+isAllAnywhere :: String -> String -> Bool
+isAllAnywhere ndls s = and [ndl `isInfixOf` s | ndl <- words ndls]
+isOneAnywhere :: String -> String -> Bool
+isOneAnywhere ndls s = or [ndl `isInfixOf` s | ndl <- words ndls]
 
 --------------------------------------------------------------------------------
 --  Functions to get all mails (in a parsed form)
@@ -127,7 +132,7 @@ parseMail' m []      r = parseMail'' m r
 #if 0
 parseMail' m ([]:ls) r = parseMail'' (m { content = unlines ls }) r
 #else
-parseMail' m ([]:ls) r = parseMail'' m r
+parseMail' m ([]:_) r = parseMail'' m r
 #endif
 parseMail' m (l:ls)  r | " " `isPrefixOf` l = parseMail' m ls (r++l)
                        | otherwise          = parseMail' (parseMail'' m r) ls l
@@ -146,14 +151,14 @@ parseMail'' m r | "From:"    `isPrefixOf` r = m { from    = remKW  r }
 parseMail'' :: Mail -> String -> Mail
 parseMail'' m r = let
     mySplit :: String -> (String,String)
-    mySplit s = mySplit' "" s
+    mySplit = mySplit' ""
     mySplit' :: String -> String -> (String,String)
     mySplit' r []       = (r,"")
     mySplit' r (':':ss) = (r,ss)
     mySplit' r (s:ss)   = mySplit' (r++[s]) ss
 
     kv = mySplit r
-  in m { allHeaders = (M.insert (fst kv) (snd kv) (allHeaders m)) }
+  in m { allHeaders = uncurry M.insert kv (allHeaders m) }
 #endif
 
 --------------------------------------------------------------------------------
@@ -192,3 +197,4 @@ applyAction m (MoveTo p) = let
     mySafeCopy (file m) targetFile
     putStrLn "done"
 applyAction m (GenAction a) = a m
+applyAction m RemAction = undefined
