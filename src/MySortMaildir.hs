@@ -49,17 +49,23 @@ data Mail = M { file :: FilePath
               , content :: String
               , allHeaders :: M.Map String String
               } deriving (Eq,Show)
+emptyMail :: Mail
 emptyMail = M { file = ""
               , rawContent = ""
               , content = ""
               , allHeaders = M.empty }
+myLookup :: String -> Mail -> String
 myLookup k m = case M.lookup k (allHeaders m) of
   Nothing -> ""
   Just v -> map toLower v
-subject = myLookup "Subject"
-from = myLookup "From"
-to = words . myLookup "To"
-cc = words . myLookup "Cc"
+subject :: Mail -> String
+subject = myLookup "subject"
+from :: Mail -> String
+from = myLookup "from"
+to :: Mail -> [String]
+to = words . myLookup "to"
+cc :: Mail -> [String]
+cc = words . myLookup "cc"
 
 data Action = MoveTo FilePath           -- move file to new path
             | RemAction                 -- remove file
@@ -149,23 +155,21 @@ parseMail'' m r | "From:"    `isPrefixOf` r = m { from    = remKW  r }
     remKWl = words . remKW
 #else
 parseMail'' :: Mail -> String -> Mail
-parseMail'' m r = let
+parseMail'' m l = let
     mySplit :: String -> (String,String)
     mySplit = mySplit' ""
     mySplit' :: String -> String -> (String,String)
     mySplit' r []       = (r,"")
     mySplit' r (':':ss) = (r,ss)
-    mySplit' r (s:ss)   = mySplit' (r++[s]) ss
-
-    kv = mySplit r
-  in m { allHeaders = uncurry M.insert kv (allHeaders m) }
+    mySplit' r (s:ss)   = mySplit' (r++[toLower s]) ss
+  in m { allHeaders = uncurry M.insert (mySplit l) (allHeaders m) }
 #endif
 
 --------------------------------------------------------------------------------
 --  Functions to apply the rules
 
 applyRules :: [Rule] -> Mail -> IO()
-applyRules [] m = return ()
+applyRules [] _ = return ()
   -- putStrLn $ "no rule found (From: " ++ from m ++ ")"
 applyRules (r:rs) m = if rule r m
   then do
@@ -173,6 +177,7 @@ applyRules (r:rs) m = if rule r m
     applyAction m (action r)
   else applyRules rs m
 
+applyAction :: Mail -> Action -> IO ()
 applyAction m (MoveTo p) = let 
     sPath          = splitPath (file m)
     dSPath         = drop (length sPath - 2) sPath
@@ -197,4 +202,4 @@ applyAction m (MoveTo p) = let
     mySafeCopy (file m) targetFile
     putStrLn "done"
 applyAction m (GenAction a) = a m
-applyAction m RemAction = undefined
+applyAction m RemAction = removeFile (file m)
