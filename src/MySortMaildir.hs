@@ -107,31 +107,30 @@ isOneAnywhere ndls s = or [ndl `isInfixOf` s | ndl <- words ndls]
 --  Functions to get all mails (in a parsed form)
 
 getMails :: FilePath -> IO ([Mail],[Mail])
-getMails inb = do
-  cur <- getMails' inb "cur"
-  new <- getMails' inb "new"
-  return (cur,new)
-
-getMails' :: FilePath -> FilePath -> IO [Mail]
-getMails' inb cur = let
-    filterDots  = filter (\p -> not $ "." `isPrefixOf` p)
-    filterFiles = filterM (\p -> doesFileExist (inb </> cur </> p))
-    getMail :: FilePath -> IO Mail
-    getMail p = let
-        filePath = inb </> cur </> p
+getMails inb = let 
+    getMails' cur = let
+        filterDots  = filter (\p -> not $ "." `isPrefixOf` p)
+        filterFiles = filterM (\p -> doesFileExist (inb </> cur </> p))
+        getMail :: FilePath -> IO Mail
+        getMail p = let
+            filePath = inb </> cur </> p
+          in do
+            rawCtn <- readFile filePath
+            return $ parseMail (emptyMail { file = filePath
+                                          , rawContent = rawCtn })
+                               (lines rawCtn)
       in do
-        rawCtn <- readFile filePath
-        return $ parseMail (emptyMail { file = filePath
-                                      , rawContent = rawCtn })
-                           (lines rawCtn)
+        ex <- doesDirectoryExist (inb </> cur)
+        if ex
+          then do
+            allfilespre <- getDirectoryContents (inb </> cur)
+            files <- filterFiles (filterDots allfilespre)
+            mapM getMail files
+          else error "INBOX not found"
   in do
-    ex <- doesDirectoryExist (inb </> cur)
-    if ex
-      then do
-        allfilespre <- getDirectoryContents (inb </> cur)
-        files <- filterFiles (filterDots allfilespre)
-        mapM getMail files
-      else error "INBOX not found"
+    cur <- getMails' "cur"
+    new <- getMails' "new"
+    return (cur,new)
 
 --------------------------------------------------------------------------------
 --  Functions to parse the a mail
@@ -149,17 +148,6 @@ parseMail' m ([]:_) r = parseMail'' m r
 parseMail' m (l:ls)  r | " " `isPrefixOf` l = parseMail' m ls (r++l)
                        | otherwise          = parseMail' (parseMail'' m r) ls l
 
-#if 0
-parseMail'' :: Mail -> String -> Mail
-parseMail'' m r | "From:"    `isPrefixOf` r = m { from    = remKW  r }
-                | "Subject:" `isPrefixOf` r = m { subject = remKW  r }
-                | "To:"      `isPrefixOf` r = m { to      = remKWl r }
-                | "Cc:"      `isPrefixOf` r = m { cc      = remKWl r }
-                | otherwise                 = m
-  where
-    remKW  = unwords . tail . splitOn ":" . map toLower
-    remKWl = words . remKW
-#else
 parseMail'' :: Mail -> String -> Mail
 parseMail'' m l = let
     mySplit :: String -> (String,String)
@@ -169,17 +157,14 @@ parseMail'' m l = let
     mySplit' r (s:ss)   = mySplit' (r++[toLower s]) ss
     mySplit' r []       = (r,"")
   in m { allHeaders = uncurry M.insert (mySplit l) (allHeaders m) }
-#endif
 
 parseItem :: String -> String
 -- encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
-parseItem = parseItem' ""
-  where
+parseItem = let 
     parseItem' r ('=':('?':ss)) = parseItem' (r ++ parseItem reencoded)
                                              (parseItem (last spted))
       where
-        spted      = spt1 "" ss
-          where
+        spted      = let 
             spt1 r' ('?':ss')       = r' : spt2 "" ss'
             spt1 r' (s:ss')         = spt1 (r' ++ [s]) ss'
             spt1 _ []               = error "Encing problem (1)"
@@ -189,6 +174,7 @@ parseItem = parseItem' ""
             spt3 r' ('?':('=':ss')) = [r',ss']
             spt3 r' (s:ss')         = spt3 (r' ++ [s]) ss'
             spt3 r' []              = [r',""]
+          in spt1 "" ss
         charset    = map toLower $ head spted
         encoding   = map toLower $ head $ tail spted
         raw        = head $ tail $ tail spted
@@ -196,7 +182,7 @@ parseItem = parseItem' ""
           "b" -> Base64.decode raw
           "q" -> raw -- imap_8bit encoding
           _   -> trace ("unknown encoding: " ++ encoding) raw
-        reencoded = case charset of
+        reencoded  = case charset of
           "utf-8"        -> reencoded' -- UTF8.toString $ UTF8.fromRep reencoded'
           "iso-8859-1"   -> reencoded'
           "iso-8859-15"  -> reencoded'
@@ -205,6 +191,7 @@ parseItem = parseItem' ""
           _              -> trace ("unknown charset: " ++ charset) reencoded'
     parseItem' r (s':ss)        = parseItem' (r ++ [s']) ss
     parseItem' r []             = r
+  in parseItem' ""
 
 --------------------------------------------------------------------------------
 --  Functions to apply the rules
@@ -219,29 +206,28 @@ applyRules (r:rs) m = if rule r m
   else applyRules rs m
 
 applyAction :: Mail -> Action -> IO ()
-applyAction _ _ = putStr "+"
--- applyAction m (MoveTo p) = let 
---     sPath          = splitPath (file m)
---     dSPath         = drop (length sPath - 2) sPath
---     targetDir      = p </> head dSPath
---     targetFile     = targetDir </> head (tail dSPath)
---     mySafeCopy s d = do 
---       -- TODO: Improve!
---       exD <- doesFileExist d
---       if exD
---         then putStrLn "Destination file already exists"
---         else do
---           copyFile s d
---           exS <- doesFileExist d
---           when exS (removeFile s)
---   in do
---     -- create mailbox if needed
---     exD <- doesDirectoryExist p
---     unless exD
---            (mapM_ (\c -> createDirectoryIfMissing True (p </> c))
---                   ["new","cur","tmp"])
---     -- copy the file
---     mySafeCopy (file m) targetFile
---     putStrLn "done"
--- applyAction m (GenAction a) = a m
--- applyAction m RemAction = removeFile (file m)
+applyAction m (MoveTo p) = let 
+    sPath          = splitPath (file m)
+    dSPath         = drop (length sPath - 2) sPath
+    targetDir      = p </> head dSPath
+    targetFile     = targetDir </> head (tail dSPath)
+    mySafeCopy s d = do 
+      -- TODO: Improve!
+      exD <- doesFileExist d
+      if exD
+        then putStrLn "Destination file already exists"
+        else do
+          copyFile s d
+          exS <- doesFileExist d
+          when exS (removeFile s)
+  in do
+    -- create mailbox if needed
+    exD <- doesDirectoryExist p
+    unless exD
+           (mapM_ (\c -> createDirectoryIfMissing True (p </> c))
+                  ["new","cur","tmp"])
+    -- copy the file
+    mySafeCopy (file m) targetFile
+    putStrLn "done"
+applyAction m (GenAction a) = a m
+applyAction m RemAction = removeFile (file m)
