@@ -194,7 +194,7 @@ parseItem = parseItem' ""
         raw        = head $ tail $ tail spted
         reencoded' = case encoding of
           "B" -> Base64.decode raw
-          "Q" -> " " ++ raw -- imap_8bit encoding
+          "Q" -> raw -- imap_8bit encoding
           _   -> raw
         reencoded = case charset of
           "UTF-8"      -> reencoded' -- UTF8.toString $ UTF8.fromRep reencoded'
