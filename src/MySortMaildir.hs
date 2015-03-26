@@ -23,9 +23,11 @@ import           Control.Monad
 import           Data.Char
 import           Data.List
 import qualified Data.Map as M
+
 -- encodings:
 import qualified Codec.Binary.Base64.String as Base64
 import qualified Data.String.UTF8 as UTF8
+
 import           Debug.Trace
 
 --------------------------------------------------------------------------------
@@ -169,14 +171,12 @@ parseMail'' m l = let
   in m { allHeaders = uncurry M.insert (mySplit l) (allHeaders m) }
 #endif
 
--- encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
---      "Subject: =?UTF-8?B?".base64_encode($subject)."?="
---      "Subject: =?UTF-8?Q?".imap_8bit($subject)."?="
 parseItem :: String -> String
+-- encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 parseItem = parseItem' ""
   where
     parseItem' r ('=':('?':ss)) = parseItem' (r ++ parseItem reencoded)
-                                             (last spted)
+                                             (parseItem (last spted))
       where
         spted      = spt1 "" ss
           where
