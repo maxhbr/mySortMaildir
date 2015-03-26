@@ -24,6 +24,10 @@ import           Data.Char
 import           Data.List
 import qualified Data.Map as M
 
+-- encodings:
+import qualified Codec.Binary.Base64.String as Base64
+import qualified Data.String.UTF8 as UTF8
+
 --------------------------------------------------------------------------------
 --  Main function to call
 
@@ -159,11 +163,46 @@ parseMail'' m l = let
     mySplit :: String -> (String,String)
     mySplit = mySplit' ""
     mySplit' :: String -> String -> (String,String)
-    mySplit' r []       = (r,"")
-    mySplit' r (':':ss) = (r,ss)
+    mySplit' r (':':ss) = (r,parseItem ss)
     mySplit' r (s:ss)   = mySplit' (r++[toLower s]) ss
+    mySplit' r []       = (r,"")
   in m { allHeaders = uncurry M.insert (mySplit l) (allHeaders m) }
 #endif
+
+-- encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
+--      "Subject: =?UTF-8?B?".base64_encode($subject)."?="
+--      "Subject: =?UTF-8?Q?".imap_8bit($subject)."?="
+parseItem :: String -> String
+parseItem = parseItem' ""
+  where
+    parseItem' r ('=':('?':ss)) = parseItem' (r ++ parseItem reencoded)
+                                             (last spted)
+      where
+        spted      = spt1 "" ss
+          where
+            spt1 r' ('?':ss')       = r' : spt2 "" ss'
+            spt1 r' (s:ss')         = spt1 (r' ++ [s]) ss'
+            spt1 _ []               = error "Encing problem (1)"
+            spt2 r' ('?':ss')       = r' : spt3 "" ss'
+            spt2 r' (s:ss')         = spt2 (r' ++ [s]) ss'
+            spt2 _ []               = error "Encing problem (2)"
+            spt3 r' ('?':('=':ss')) = [r',ss']
+            spt3 r' (s:ss')         = spt3 (r' ++ [s]) ss'
+            spt3 r' []              = [r',""]
+        charset    = head spted
+        encoding   = head $ tail spted
+        raw        = head $ tail $ tail spted
+        reencoded' = case encoding of
+          "B" -> Base64.decode raw
+          "Q" -> " " ++ raw -- imap_8bit encoding
+          _   -> raw
+        reencoded = case charset of
+          "UTF-8"      -> reencoded' -- UTF8.toString $ UTF8.fromRep reencoded'
+          "iso-8859-1" -> reencoded'
+          "us-ascii"   -> reencoded'
+          _            -> reencoded'
+    parseItem' r (s':ss)        = parseItem' (r ++ [s']) ss
+    parseItem' r []             = r
 
 --------------------------------------------------------------------------------
 --  Functions to apply the rules
@@ -178,28 +217,29 @@ applyRules (r:rs) m = if rule r m
   else applyRules rs m
 
 applyAction :: Mail -> Action -> IO ()
-applyAction m (MoveTo p) = let 
-    sPath          = splitPath (file m)
-    dSPath         = drop (length sPath - 2) sPath
-    targetDir      = p </> head dSPath
-    targetFile     = targetDir </> head (tail dSPath)
-    mySafeCopy s d = do 
-      -- TODO: Improve!
-      exD <- doesFileExist d
-      if exD
-        then putStrLn "Destination file already exists"
-        else do
-          copyFile s d
-          exS <- doesFileExist d
-          when exS (removeFile s)
-  in do
-    -- create mailbox if needed
-    exD <- doesDirectoryExist p
-    unless exD
-           (mapM_ (\c -> createDirectoryIfMissing True (p </> c))
-                  ["new","cur","tmp"])
-    -- copy the file
-    mySafeCopy (file m) targetFile
-    putStrLn "done"
-applyAction m (GenAction a) = a m
-applyAction m RemAction = removeFile (file m)
+applyAction _ _ = putStr "+"
+-- applyAction m (MoveTo p) = let 
+--     sPath          = splitPath (file m)
+--     dSPath         = drop (length sPath - 2) sPath
+--     targetDir      = p </> head dSPath
+--     targetFile     = targetDir </> head (tail dSPath)
+--     mySafeCopy s d = do 
+--       -- TODO: Improve!
+--       exD <- doesFileExist d
+--       if exD
+--         then putStrLn "Destination file already exists"
+--         else do
+--           copyFile s d
+--           exS <- doesFileExist d
+--           when exS (removeFile s)
+--   in do
+--     -- create mailbox if needed
+--     exD <- doesDirectoryExist p
+--     unless exD
+--            (mapM_ (\c -> createDirectoryIfMissing True (p </> c))
+--                   ["new","cur","tmp"])
+--     -- copy the file
+--     mySafeCopy (file m) targetFile
+--     putStrLn "done"
+-- applyAction m (GenAction a) = a m
+-- applyAction m RemAction = removeFile (file m)
