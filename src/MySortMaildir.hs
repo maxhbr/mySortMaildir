@@ -180,13 +180,13 @@ parseItem = let
         raw        = head $ tail $ tail spted
         reencoded' = case encoding of
           "b" -> Base64.decode raw
-          "q" -> raw -- imap_8bit encoding
+          "q" -> raw -- TODO: imap_8bit encoding
           _   -> trace ("unknown encoding: " ++ encoding) raw
         reencoded  = case charset of
-          "utf-8"        -> reencoded' -- UTF8.toString $ UTF8.fromRep reencoded'
-          "iso-8859-1"   -> reencoded'
-          "iso-8859-15"  -> reencoded'
-          "us-ascii"     -> reencoded'
+          "utf-8"        -> reencoded' -- TODO: UTF8.toString $ UTF8.fromRep reencoded'
+          "iso-8859-1"   -> reencoded' -- TODO
+          "iso-8859-15"  -> reencoded' -- TODO
+          "us-ascii"     -> reencoded' -- TODO
           "windows-1252" -> reencoded'
           _              -> trace ("unknown charset: " ++ charset) reencoded'
     parseItem' r (s':ss)        = parseItem' (r ++ [s']) ss
