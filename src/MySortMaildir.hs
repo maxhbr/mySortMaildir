@@ -23,10 +23,10 @@ import           Control.Monad
 import           Data.Char
 import           Data.List
 import qualified Data.Map as M
-
 -- encodings:
 import qualified Codec.Binary.Base64.String as Base64
 import qualified Data.String.UTF8 as UTF8
+import           Debug.Trace
 
 --------------------------------------------------------------------------------
 --  Main function to call
@@ -189,18 +189,20 @@ parseItem = parseItem' ""
             spt3 r' ('?':('=':ss')) = [r',ss']
             spt3 r' (s:ss')         = spt3 (r' ++ [s]) ss'
             spt3 r' []              = [r',""]
-        charset    = head spted
-        encoding   = head $ tail spted
+        charset    = map toLower $ head spted
+        encoding   = map toLower $ head $ tail spted
         raw        = head $ tail $ tail spted
         reencoded' = case encoding of
-          "B" -> Base64.decode raw
-          "Q" -> raw -- imap_8bit encoding
-          _   -> raw
+          "b" -> Base64.decode raw
+          "q" -> raw -- imap_8bit encoding
+          _   -> trace ("unknown encoding: " ++ encoding) raw
         reencoded = case charset of
-          "UTF-8"      -> reencoded' -- UTF8.toString $ UTF8.fromRep reencoded'
-          "iso-8859-1" -> reencoded'
-          "us-ascii"   -> reencoded'
-          _            -> reencoded'
+          "utf-8"        -> reencoded' -- UTF8.toString $ UTF8.fromRep reencoded'
+          "iso-8859-1"   -> reencoded'
+          "iso-8859-15"  -> reencoded'
+          "us-ascii"     -> reencoded'
+          "windows-1252" -> reencoded'
+          _              -> trace ("unknown charset: " ++ charset) reencoded'
     parseItem' r (s':ss)        = parseItem' (r ++ [s']) ss
     parseItem' r []             = r
 
