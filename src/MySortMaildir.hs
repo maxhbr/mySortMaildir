@@ -135,67 +135,87 @@ getMails inb = let
 --------------------------------------------------------------------------------
 --  Functions to parse the a mail
 
+--------------------------------------------------------------------------------
+-- Takes 
+--      a mail and
+--      a list of lines
+-- and adds the found information in the lines to the mail
 parseMail :: Mail -> [String] -> Mail
-parseMail m ls =  parseMail' m ls ""
+parseMail m ls = let
+    parseMail' :: Mail -> [String] -> String -> Mail
+    parseMail' m' []      r = parseMail'' m' r
+    parseMail' m' ([]:ls) r = parseMail'' (m' { content = unlines ls }) r
+    parseMail' m' (l:ls') r | " " `isPrefixOf` l = parseMail' m' ls' (r++l)
+                            | otherwise          = parseMail' (parseMail'' m' r) ls' l
 
-parseMail' :: Mail -> [String] -> String -> Mail
-parseMail' m []      r = parseMail'' m r
-#if 0
-parseMail' m ([]:ls) r = parseMail'' (m { content = unlines ls }) r
-#else
-parseMail' m ([]:_) r = parseMail'' m r
-#endif
-parseMail' m (l:ls)  r | " " `isPrefixOf` l = parseMail' m ls (r++l)
-                       | otherwise          = parseMail' (parseMail'' m r) ls l
+    parseMail'' :: Mail -> String -> Mail
+    parseMail'' m' l = let
+        mySplit :: String -> (String,String)
+        mySplit = mySplit' ""
+        mySplit' :: String -> String -> (String,String)
+        mySplit' r (':':ss) = (r,parseItem ss)
+        mySplit' r (s:ss)   = mySplit' (r++[toLower s]) ss
+        mySplit' r []       = (r,"")
+      in m' { allHeaders = uncurry M.insert (mySplit l) (allHeaders m') }
+  in parseMail' m ls ""
 
-parseMail'' :: Mail -> String -> Mail
-parseMail'' m l = let
-    mySplit :: String -> (String,String)
-    mySplit = mySplit' ""
-    mySplit' :: String -> String -> (String,String)
-    mySplit' r (':':ss) = (r,parseItem ss)
-    mySplit' r (s:ss)   = mySplit' (r++[toLower s]) ss
-    mySplit' r []       = (r,"")
-  in m { allHeaders = uncurry M.insert (mySplit l) (allHeaders m) }
-
+-------------------------------------------------------------------------------
+-- takes a string containing encoded parts of the form 
+--      "=?" charset "?" encoding "?" encoded-text "?="
+-- and returs a string, where these parts are reencoded
 parseItem :: String -> String
--- encoded-word = "=?" charset "?" encoding "?" encoded-text "?="
 parseItem = let 
-    parseItem' r ('=':('?':ss)) = parseItem' (r ++ parseItem reencoded)
-                                             (parseItem (last spted))
+    parseItem' r ('=':('?':ss)) =
+        parseItem' (r ++ parseItem (reencode (take 3 (spted ss))))
+                   (parseItem                (last   (spted ss)))
       where
-        spted      = let 
-            spt1 r' ('?':ss')       = r' : spt2 "" ss'
-            spt1 r' (s:ss')         = spt1 (r' ++ [s]) ss'
-            spt1 _ []               = error "Encing problem (1)"
-            spt2 r' ('?':ss')       = r' : spt3 "" ss'
-            spt2 r' (s:ss')         = spt2 (r' ++ [s]) ss'
-            spt2 _ []               = error "Encing problem (2)"
-            spt3 r' ('?':('=':ss')) = [r',ss']
-            spt3 r' (s:ss')         = spt3 (r' ++ [s]) ss'
-            spt3 r' []              = [r',""]
-          in spt1 "" ss
-        charset    = map toLower $ head spted
-        encoding   = map toLower $ head $ tail spted
-        raw        = head $ tail $ tail spted
-        reencoded' = case encoding of
-          "b" -> Base64.decode raw
-          "q" -> raw -- TODO: imap_8bit encoding
-          _   -> trace ("unknown encoding: " ++ encoding) raw
-        reencoded  = case charset of
-          "utf-8"        -> reencoded' -- TODO: UTF8.toString $ UTF8.fromRep reencoded'
-          "iso-8859-1"   -> reencoded' -- TODO
-          "iso-8859-15"  -> reencoded' -- TODO
-          "us-ascii"     -> reencoded' -- TODO
-          "windows-1252" -> reencoded'
-          _              -> trace ("unknown charset: " ++ charset) reencoded'
+        -----------------------------------------------------------------------
+        -- Splits a string of the form 
+        --      "=?charset?encoding?encoded-text?=rest"
+        -- into
+        --      ["charset","encoding","encoded-text","rest"]
+        spted ss' = let 
+            spt1 r' ('?':ss'')       = r' : spt2 "" ss''
+            spt1 r' (s:ss'')         = spt1 (r' ++ [s]) ss''
+            spt1 _ []                = error "Encing problem (1)"
+            spt2 r' ('?':ss'')       = r' : spt3 "" ss''
+            spt2 r' (s:ss'')         = spt2 (r' ++ [s]) ss''
+            spt2 _ []                = error "Encing problem (2)"
+            spt3 r' ('?':('=':ss'')) = [r',ss'']
+            spt3 r' (s:ss'')         = spt3 (r' ++ [s]) ss''
+            spt3 r' []               = [r',""]
+          in spt1 "" ss'
     parseItem' r (s':ss)        = parseItem' (r ++ [s']) ss
     parseItem' r []             = r
   in parseItem' ""
 
+-------------------------------------------------------------------------------
+-- Takes a list 
+--      ["charset","encoding","stringToReencode"]
+-- and returns a reencoded version of "stringToReencode"
+reencode :: [String] -> String
+reencode (charset:(encoding:[s])) = let 
+    reencode' s'  = case map toLower charset of
+      "utf-8"        -> s' -- TODO: UTF8.toString $ UTF8.fromRep s'
+      "iso-8859-1"   -> s' -- TODO
+      "iso-8859-15"  -> s' -- TODO
+      "us-ascii"     -> s' -- TODO
+      "windows-1252" -> s' -- TODO
+      _              -> trace ("unknown charset: " ++ charset) s'
+  in reencode' $ case map toLower encoding of
+    "b" -> Base64.decode s
+    "q" -> s -- TODO: imap_8bit encoding
+    _   -> trace ("unknown encoding: " ++ encoding) s
+reencode ss = trace "reencode: Input list has not the correct length" $ unwords ss
+
 --------------------------------------------------------------------------------
 --  Functions to apply the rules
 
+--------------------------------------------------------------------------------
+-- Takes
+--      a list of rules and
+--      a mail
+-- and applies the first rule, whose condition is satisfied
 applyRules :: [Rule] -> Mail -> IO()
 applyRules [] _ = return ()
   -- putStrLn $ "no rule found (From: " ++ from m ++ ")"
@@ -205,6 +225,11 @@ applyRules (r:rs) m = if rule r m
     applyAction m (action r)
   else applyRules rs m
 
+--------------------------------------------------------------------------------
+-- Takes
+--      a mail and
+--      a action
+-- and aplies the action to the mail
 applyAction :: Mail -> Action -> IO ()
 applyAction m (MoveTo p) = let 
     sPath          = splitPath (file m)
