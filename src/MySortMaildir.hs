@@ -10,9 +10,9 @@
 module MySortMaildir
   ( runMySortMaildir
   , Config (..)
-  , Mail (..), subject, from, to, cc
+  , Mail (..), subject, from, to, cc, getAge
   , Action (..)
-  , Rule (..)
+  , Rule (..), basicListRule
   -- useful functions for creating rules:
   , isAnyInfix, isAllAnywhere, isOneAnywhere
   ) where
@@ -72,6 +72,8 @@ to :: Mail -> [String]
 to = words . myLookup "to"
 cc :: Mail -> [String]
 cc = words . myLookup "cc"
+getAge :: Mail -> Int
+getAge = undefined
 
 data Action = MoveTo FilePath           -- move file to new path
             | RemAction                 -- remove file
@@ -102,6 +104,11 @@ isAllAnywhere :: String -> String -> Bool
 isAllAnywhere ndls s = and [ndl `isInfixOf` s | ndl <- words ndls]
 isOneAnywhere :: String -> String -> Bool
 isOneAnywhere ndls s = or [ndl `isInfixOf` s | ndl <- words ndls]
+
+basicListRule :: (String, String) -> Rule
+basicListRule (mInfx,mBx) = R { name   = takeExtension mBx
+                              , rule   = isAnyInfix mInfx
+                              , action = MoveTo mBx }
 
 --------------------------------------------------------------------------------
 --  Functions to get all mails (in a parsed form)
