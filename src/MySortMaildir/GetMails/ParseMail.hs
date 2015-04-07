@@ -3,11 +3,11 @@
 -- Module      : MySortMaildir.ParseMail
 -- Note        : Functions to parse the a mail
 --
---
+-- Here is also the fucntion, which takes care of the encodings.
 --
 --------------------------------------------------------------------------------
 
-module MySortMaildir.ParseMail
+module MySortMaildir.GetMails.ParseMail
   ( parseMail
   ) where
 

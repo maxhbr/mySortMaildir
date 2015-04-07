@@ -17,7 +17,7 @@ import           Control.Monad
 import           Data.List
 
 import           MySortMaildir.Common
-import           MySortMaildir.ParseMail
+import           MySortMaildir.GetMails.ParseMail
 
 --------------------------------------------------------------------------------
 --  Functions to get all mails (in a parsed form)
