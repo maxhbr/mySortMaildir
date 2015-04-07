@@ -1,3 +1,12 @@
+--------------------------------------------------------------------------------
+-- | 
+-- Module      : MySortMaildir.Common
+-- Note        : Contains the definitions
+-- 
+-- 
+-- 
+--------------------------------------------------------------------------------
+
 module MySortMaildir.Common
   ( Config (..)
   , Mail (..), emptyMail, subject, from, to, cc, getAge

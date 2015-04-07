@@ -1,3 +1,12 @@
+--------------------------------------------------------------------------------
+-- | 
+-- Module      : MySortMaildir.Actions
+-- Note        : Contains the function to apply the actions defined in Common.hs
+-- 
+-- 
+-- 
+--------------------------------------------------------------------------------
+
 module MySortMaildir.Actions
   ( applyAction
   ) where

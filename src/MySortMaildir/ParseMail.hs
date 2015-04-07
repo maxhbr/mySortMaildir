@@ -1,4 +1,13 @@
-module MySortMaildir.ParseMail 
+--------------------------------------------------------------------------------
+-- |
+-- Module      : MySortMaildir.ParseMail
+-- Note        : Functions to parse the a mail
+--
+--
+--
+--------------------------------------------------------------------------------
+
+module MySortMaildir.ParseMail
   ( parseMail
   ) where
 
@@ -15,10 +24,7 @@ import           Debug.Trace
 import           MySortMaildir.Common
 
 --------------------------------------------------------------------------------
---  Functions to parse the a mail
-
---------------------------------------------------------------------------------
--- Takes 
+-- Takes
 --      a mail and
 --      a list of lines
 -- and adds the found information in the lines to the mail
@@ -42,21 +48,21 @@ parseMail m ls = let
   in parseMail' m ls ""
 
 -------------------------------------------------------------------------------
--- takes a string containing encoded parts of the form 
+-- takes a string containing encoded parts of the form
 --      "=?" charset "?" encoding "?" encoded-text "?="
 -- and returs a string, where these parts are reencoded
 parseItem :: String -> String
-parseItem = let 
+parseItem = let
     parseItem' r ('=':('?':ss)) =
         parseItem' (r ++ parseItem (reencode (take 3 (spted ss))))
                    (parseItem                (last   (spted ss)))
       where
         -----------------------------------------------------------------------
-        -- Splits a string of the form 
+        -- Splits a string of the form
         --      "=?charset?encoding?encoded-text?=rest"
         -- into
         --      ["charset","encoding","encoded-text","rest"]
-        spted ss' = let 
+        spted ss' = let
             spt1 r' ('?':ss'')       = r' : spt2 "" ss''
             spt1 r' (s:ss'')         = spt1 (r' ++ [s]) ss''
             spt1 _ []                = error "Encing problem (1)"
@@ -72,11 +78,11 @@ parseItem = let
   in parseItem' ""
 
 -------------------------------------------------------------------------------
--- Takes a list 
+-- Takes a list
 --      ["charset","encoding","stringToReencode"]
 -- and returns a reencoded version of "stringToReencode"
 reencode :: [String] -> String
-reencode (charset:(encoding:[s])) = let 
+reencode (charset:(encoding:[s])) = let
     reencode' s'  = case map toLower charset of
       "utf-8"        -> s' -- TODO: UTF8.toString $ UTF8.fromRep s'
       "iso-8859-1"   -> s' -- TODO

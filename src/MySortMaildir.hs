@@ -15,9 +15,9 @@ module MySortMaildir
 
 import           MySortMaildir.Common
 import           MySortMaildir.Common as X hiding (emptyMail)
+import           MySortMaildir.Helpers as X
 import           MySortMaildir.GetMails
 import           MySortMaildir.Actions
-import           MySortMaildir.Helpers as X
 
 --------------------------------------------------------------------------------
 --  Main function to call
@@ -35,11 +35,11 @@ runMySortMaildir cfgs = do
     line >> putStrLn "Done"
   where
     line = putStrLn $ replicate 60 '='
-    --------------------------------------------------------------------------------
+    ----------------------------------------------------------------------------
     -- Takes
     --      a list of rules and
     --      a mail
-    -- and applies the first rule, whose condition is satisfied
+    -- and applies the action of the first rule, whose condition is satisfied
     applyRules :: [Rule] -> Mail -> IO()
     applyRules [] _ = return ()
       -- putStrLn $ "no rule found (From: " ++ from m ++ ")"
