@@ -11,6 +11,7 @@ maintainer:          mail@maximilian-huber.de
 build-type:          Simple
 extra-source-files:  src/mySortMaildir.hs.example
 cabal-version:       >=1.10
+source-repository:   https://github.com/maximilianhuber/mySortMaildir
 
 library
   exposed-modules:     MySortMaildir

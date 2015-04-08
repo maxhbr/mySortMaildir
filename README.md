@@ -32,6 +32,8 @@ or run it without compiling via
 TODO:
 -----
 * **Remember already parsed/sorted mails**
+  - get config file via getExecutablePath
+  - compare MD5 of config, to check for changes (Data.Digest.Pure.MD5)
 * Watch the folders with **System.FSNotify**
 * Solve encoding problems
 * use parsec for parsing

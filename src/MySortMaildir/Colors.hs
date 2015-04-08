@@ -6,24 +6,31 @@
 -- Stolen from: https://github.com/schell/steeloverseer/blob/master/src/ANSIColors.hs
 --
 --------------------------------------------------------------------------------
-
 module MySortMaildir.Colors
   where
 
-data ANSIColor = ANSIBlack | ANSIRed | ANSIGreen | ANSIYellow | ANSIBlue | ANSIMagenta | ANSICyan | ANSIWhite | ANSINone
+data ANSIColor = ANSIBlack
+               | ANSIRed
+               | ANSIGreen
+               | ANSIYellow
+               | ANSIBlue
+               | ANSIMagenta
+               | ANSICyan
+               | ANSIWhite
+               | ANSINone
     deriving (Ord, Eq)
 
 instance Show ANSIColor where
     show ANSINone = "\27[0m"
     show c = let
-        colorNum c = length $ takeWhile (/= c) [ ANSIBlack
-                                               , ANSIRed
-                                               , ANSIGreen
-                                               , ANSIYellow
-                                               , ANSIBlue
-                                               , ANSIMagenta
-                                               , ANSICyan
-                                               , ANSIWhite ]
+        colorNum = length $ takeWhile (/= c) [ ANSIBlack
+                                             , ANSIRed
+                                             , ANSIGreen
+                                             , ANSIYellow
+                                             , ANSIBlue
+                                             , ANSIMagenta
+                                             , ANSICyan
+                                             , ANSIWhite ]
       in "\27[" ++ show (30 + colorNum c) ++ "m"
 
 --------------------------------------------------------------------------------
@@ -46,9 +53,8 @@ cyanString = colorString ANSICyan
 whiteString :: String -> String
 whiteString = colorString ANSIWhite
 
-
 --------------------------------------------------------------------------------
---  Print colored string
+--  Print colored strings
 colorPrint :: ANSIColor -> String -> IO ()
 colorPrint c = putStrLn . colorString c
 

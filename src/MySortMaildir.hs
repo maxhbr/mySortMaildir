@@ -51,4 +51,3 @@ runMySortMaildir cfgs = let
     line >> cyanPrint "Done"
   where
     line = bluePrint $ replicate 60 '='
-

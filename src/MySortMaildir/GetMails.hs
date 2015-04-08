@@ -31,6 +31,7 @@ getMails inb = let
         getMail p = let
             filePath = inb </> cur </> p
           in do
+            -- TODO: Skip big files? Read only first lines of big files?
             rawCtn <- readFile filePath
             return $ parseMail (emptyMail { file = filePath
                                           , rawContent = rawCtn
