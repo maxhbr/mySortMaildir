@@ -48,4 +48,5 @@ applyAction m (MoveTo p) = let
     putStrLn "done"
 applyAction m (GenAction a) = a m
 applyAction m RemAction = removeFile (file m)
+applyAction m (PrintAction f) = mapM_ putStrLn $ f m
 -- applyAction m _         = error "applyAction: action not implemented yet!"

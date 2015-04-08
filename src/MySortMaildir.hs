@@ -14,6 +14,7 @@ module MySortMaildir
   ) where
 
 import           MySortMaildir.Common
+import           MySortMaildir.Colors as X
 import           MySortMaildir.Common as X hiding (emptyMail)
 import           MySortMaildir.Helpers as X
 import           MySortMaildir.GetMails
@@ -36,18 +37,18 @@ runMySortMaildir cfgs = let
       -- putStrLn $ "no rule found (From: " ++ from m ++ ")"
     applyRules (r:rs) m = if rule r m
       then do
-        putStr $ "apply rule " ++ show r ++ " ... "
+        greenPrint $ "apply rule " ++ show r ++ " ... "
         applyAction m (action r)
       else applyRules rs m
   in do
-    line >> putStrLn "Start"
+    line >> cyanPrint "Start"
     mapM_ (\cfg -> do
       line >> putStrLn ("work on: " ++ inbox cfg ++ " ...")
       (curMails,newMails) <- getMails (inbox cfg)
       putStrLn $ "   " ++ show (length curMails) ++ " current mails found"
       putStrLn $ "   " ++ show (length newMails) ++ " new mails found"
       mapM_ (applyRules $ rules cfg) (curMails ++ newMails)) cfgs
-    line >> putStrLn "Done"
+    line >> cyanPrint "Done"
   where
-    line = putStrLn $ replicate 60 '='
+    line = bluePrint $ replicate 60 '='
 

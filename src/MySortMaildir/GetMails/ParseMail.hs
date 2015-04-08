@@ -32,10 +32,11 @@ import           MySortMaildir.Common
 parseMail :: Mail -> [String] -> Mail
 parseMail m ls = let
     parseMail' :: Mail -> [String] -> String -> Mail
-    parseMail' m' []       r = parseMail'' m' r
     parseMail' m' ([]:ls') r = parseMail'' (m' { content = unlines ls' }) r
-    parseMail' m' (l:ls')  r | " " `isPrefixOf` l = parseMail' m' ls' (r++l)
-                             | otherwise          = parseMail' (parseMail'' m' r) ls' l
+    parseMail' m' (l:ls')  r
+      | head l `elem` [' ','\t'] = parseMail' m' ls' (r++l)
+      | otherwise                = parseMail' (parseMail'' m' r) ls' l
+    parseMail' m' []       r = parseMail'' m' r
 
     parseMail'' :: Mail -> String -> Mail
     parseMail'' m' l = let

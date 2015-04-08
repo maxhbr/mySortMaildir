@@ -47,9 +47,10 @@ cc = words . myLookup "cc"
 getAge :: Mail -> Int
 getAge = undefined
 
-data Action = MoveTo FilePath           -- move file to new path
-            | RemAction                 -- remove file
-            | GenAction (Mail -> IO())  -- generic action
+data Action = MoveTo FilePath                -- move file to new path
+            | RemAction                      -- remove file
+            | GenAction (Mail -> IO())       -- generic action
+            | PrintAction (Mail -> [String]) -- prints lines depending sth
 
 data Rule = R { name :: String
               , rule :: Mail -> Bool

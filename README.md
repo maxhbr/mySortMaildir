@@ -32,6 +32,7 @@ or run it without compiling via
 TODO:
 -----
 * **Remember already parsed/sorted mails**
+* Watch the folders with **System.FSNotify**
 * Solve encoding problems
 * use parsec for parsing
 * Find better name ({,h}S{o,}rtM{ai,}ld{i,}r)
