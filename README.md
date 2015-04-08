@@ -34,7 +34,7 @@ TODO:
 * **Remember already parsed/sorted mails**
 * Solve encoding problems
 * use parsec for parsing
-* Find better name
+* Find better name ({,h}S{o,}rtM{ai,}ld{i,}r)
 
 Infos:
 ------
