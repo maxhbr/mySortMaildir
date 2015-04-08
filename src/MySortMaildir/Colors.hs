@@ -31,7 +31,7 @@ instance Show ANSIColor where
                                              , ANSIMagenta
                                              , ANSICyan
                                              , ANSIWhite ]
-      in "\27[" ++ show (30 + colorNum c) ++ "m"
+      in "\27[" ++ show (30 + colorNum) ++ "m"
 
 --------------------------------------------------------------------------------
 --  String coloring
