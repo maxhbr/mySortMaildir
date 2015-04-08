@@ -28,7 +28,7 @@ isOneAnywhere :: String -> String -> Bool
 isOneAnywhere ndls s = or [ndl `isInfixOf` s | ndl <- words ndls]
 
 basicListRule :: (String, String) -> Rule
-basicListRule (mInfx,mBx) = R { name   = takeExtension mBx
+basicListRule (mInfx,mBx) = R { name   = tail $ takeExtension mBx
                               , rule   = isAnyInfix mInfx
                               , action = MoveTo mBx }
 
