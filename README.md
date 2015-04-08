@@ -9,8 +9,8 @@ I am actually **not sure, if it is safe to use this program**.
 
 Setup
 -----
-To configure, create a **mySortMaildir.hs** by using
-**mySortMaildir.hs.example** and
+To configure, create a **src/mySortMaildir.hs** by using
+**src/mySortMaildir.hs.example** and
 
     $ cabal sandbox init
     $ cabal install
