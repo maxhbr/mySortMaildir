@@ -1,3 +1,4 @@
+{-# OPTIONS -fno-warn-overlapping-patterns #-}
 --------------------------------------------------------------------------------
 -- | 
 -- Module      : MySortMaildir.Actions
@@ -45,8 +46,8 @@ applyAction m (MoveTo p) = let
                   ["new","cur","tmp"])
     -- copy the file
     mySafeCopy (file m) targetFile
-    putStrLn "done"
+    putStrLn "\b...done"
 applyAction m (GenAction a) = a m
 applyAction m RemAction = removeFile (file m)
 applyAction m (PrintAction f) = mapM_ putStrLn $ f m
--- applyAction m _         = error "applyAction: action not implemented yet!"
+applyAction m _         = error "applyAction: action not implemented yet!"
