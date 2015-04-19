@@ -46,7 +46,6 @@ applyAction m (MoveTo p) = let
                   ["new","cur","tmp"])
     -- copy the file
     mySafeCopy (file m) targetFile
-    putStrLn "\b...done"
 applyAction m (GenAction a) = a m
 applyAction m RemAction = removeFile (file m)
 applyAction m (PrintAction f) = mapM_ putStrLn $ f m
