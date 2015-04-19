@@ -37,7 +37,7 @@ TODO:
   - serialize / cache parsed information
 * Watch the folders with **System.FSNotify**
 * Solve encoding problems
-* tui with https://github.com/skogsbaer/hscurses
+* tui with https://github.com/skogsbaer/hscurses or http://jtdaugherty.github.io/vty-ui/
 * use parsec for parsing
 * Find better name ({,h}S{o,}rtM{ai,}ld{i,}r)
 
