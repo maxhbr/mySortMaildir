@@ -31,6 +31,7 @@ or run it without compiling via
 
 TODO:
 -----
+* try https://hackage.haskell.org/package/email-header
 * **Remember already parsed/sorted mails**
   - get config file via getExecutablePath
   - compare MD5 of config, to check for changes (Data.Digest.Pure.MD5)

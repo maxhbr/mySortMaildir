@@ -1,4 +1,5 @@
 {-# OPTIONS -fno-warn-overlapping-patterns #-}
+{-# LANGUAGE CPP #-}
 --------------------------------------------------------------------------------
 -- | 
 -- Module      : MySortMaildir.Actions
@@ -24,7 +25,7 @@ import           MySortMaildir.Common
 --      a action
 -- and aplies the action to the mail
 applyAction :: Mail -> Action -> IO ()
-applyAction m (MoveTo p) = let
+applyAction m (MoveTo p)      = let
     sPath          = splitPath (file m)
     dSPath         = drop (length sPath - 2) sPath
     targetDir      = p </> head dSPath
@@ -46,7 +47,7 @@ applyAction m (MoveTo p) = let
                   ["new","cur","tmp"])
     -- copy the file
     mySafeCopy (file m) targetFile
-applyAction m (GenAction a) = a m
-applyAction m RemAction = removeFile (file m)
+applyAction m (GenAction a)   = a m
+applyAction m RemAction       = removeFile (file m)
 applyAction m (PrintAction f) = mapM_ putStrLn $ f m
-applyAction m _         = error "applyAction: action not implemented yet!"
+applyAction m _               = error "applyAction: action not implemented yet!"

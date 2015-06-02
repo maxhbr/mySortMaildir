@@ -18,7 +18,7 @@ import qualified Data.Map as M
 
 -- encodings:
 import qualified Codec.Binary.Base64.String as Base64
-import qualified Data.String.UTF8 as UTF8
+-- import qualified Data.String.UTF8 as UTF8
 
 import           Debug.Trace
 

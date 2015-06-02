@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 
 if [[ -f "$(dirname "$0")/src/mySortMaildir.hs" ]]; then
-  pushd "$(dirname "$0")/src" >/dev/null
-  ./mySortMaildir.hs
+  # pushd "$(dirname "$0")/src" >/dev/null
+  # ./mySortMaildir.hs
+  # popd >/dev/null
+  pushd "$(dirname "$0")" >/dev/null
+  cabal run mySortMaildir
   popd >/dev/null
 else
   cat << EOF

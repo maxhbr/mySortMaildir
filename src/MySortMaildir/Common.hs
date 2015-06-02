@@ -36,6 +36,7 @@ myLookup :: String -> Mail -> String
 myLookup k m = case M.lookup k (allHeaders m) of
   Nothing -> ""
   Just v -> map toLower v
+
 subject :: Mail -> String
 subject = myLookup "subject"
 from :: Mail -> String
