@@ -1,3 +1,8 @@
+Actualy, at the moment, i use https://github.com/jrosdahl/maildirproc, which is
+python based and offers less functionality. But it has no encoding problems.
+
+I will replace it by this project, when some of the TODOs are solved.
+
 mySortMaildir
 =============
 A small program, which filters mails in **maildir**s by some simple configurable
